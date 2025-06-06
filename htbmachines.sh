@@ -14,7 +14,33 @@ function ctrl_c(){
 	echo -e "\n${redcColour}[!]${endColour} Exitting..."
 	exit 1
 }
-
+#Ctrl+C
 trap ctrl_c INT
 
-sleep 10
+
+function helpPanel(){
+echo -e "\n[+] Uso:" 
+}
+
+function searchMachine(){
+   machineName="$1"
+   echo "hi $machineName"
+}
+
+#Indicadores
+declare -i parameter_counter=0
+
+while getopts "m:h" arg; do
+	case $arg in
+	   m) machineName=$OPTARG; let parameter_counter+=1;;
+	   h) helpPanel;;
+
+	esac
+done
+
+if [ $parameter_counter -eq 1 ]; then
+   searchMachine $machineName
+else
+   helpPanel
+fi
+
