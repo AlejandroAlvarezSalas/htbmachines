@@ -30,16 +30,6 @@ function helpPanel(){
 	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Muestra el panel de ayuda${endColour}"
 }
 
-function searchMachine(){
-	machineName="$1"
-	if [ ! -f machine_list.txt ]
-	then
-		echo -e "\n${yellowColour}[+]${endColour}${greyColour}Lista no encontrada${endColour}"
-		updateList
-	fi
-	cat machine_list.txt | grep $machineName | head -n 3
-}
-
 function dependenciesChecker(){
         if ! command -v sponge 1>/dev/null
         then 
@@ -99,6 +89,18 @@ function updateList(){
 
 	versionChecker
 	
+}
+
+
+function searchMachine(){
+	machineName="$1"
+	if [ ! -f machine_list.txt ]
+	then
+		echo -e "\n${yellowColour}[+]${endColour}${greyColour}Lista no encontrada${endColour}"
+		updateList
+	fi
+	cat machine_list.txt | awk "/name: \"${machineName}\"/,/resuelta:/"  | grep -vE "id:|sku:|resuelta" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+
 }
 
 while getopts "m:hur" arg; do
