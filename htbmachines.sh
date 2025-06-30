@@ -26,7 +26,9 @@ trap ctrl_c INT
 function helpPanel(){
 	echo -e "\n${yellowColour}[+]${endColour}${greyColour}Uso:${endColour}"
 	echo -e "\n\t${purpleColour}m)${endColour}${greyColour} Busca por nombre de máquina${endColour}"
+	echo -e "\n\t${purpleColour}m)${endColour}${greyColour} Busca por dirección IP de máquina${endColour}"
 	echo -e "\n\t${purpleColour}u)${endColour}${greyColour} Actualiza el listado${endColour}"
+	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Busca el nombre de una máquina por IP${endColour}"
 	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Muestra el panel de ayuda${endColour}"
 }
 
@@ -103,7 +105,13 @@ function searchMachine(){
 
 }
 
-while getopts "m:hur" arg; do
+function getNameByIP(){
+	IP_Address="$1"
+	machineName="$(cat machine_list.txt | grep "ip: \"$IP_Address\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')"
+	echo -e "\n${yellowColour}[+]${endColour} ${greyColour}La IP${endColour} ${blueColour}${IP_Address}${endColour} ${greyColour}pertenece a la máquina${endColour} ${purpleColour}$machineName${endColour}"
+}
+
+while getopts "m:huri:" arg; do
 	case $arg in
 	   m)
 		machineName=$OPTARG; let parameter_counter+=1
@@ -113,6 +121,9 @@ while getopts "m:hur" arg; do
 		;;
 	   r)
 		let parameter_counter+=3
+		;;
+	   i)
+		IP_Address=$OPTARG; let parameter_counter+=5
 		;;
 	   h)
 		helpPanel
@@ -130,6 +141,9 @@ then
 elif [ $parameter_counter -eq 3 ]
 then
 	recoverBackup
+elif [ $parameter_counter -eq 5 ]
+then
+	getNameByIP $IP_Address
 else
 	helpPanel
 fi
