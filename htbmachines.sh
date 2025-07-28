@@ -28,7 +28,8 @@ function helpPanel(){
 	echo -e "\n\t${purpleColour}m)${endColour}${greyColour} Busca por nombre de máquina${endColour}"
 	echo -e "\n\t${purpleColour}m)${endColour}${greyColour} Busca por dirección IP de máquina${endColour}"
 	echo -e "\n\t${purpleColour}u)${endColour}${greyColour} Actualiza el listado${endColour}"
-	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Busca el nombre de una máquina por IP${endColour}"
+	echo -e "\n\t${purpleColour}i)${endColour}${greyColour} Busca el nombre de una máquina por IP${endColour}"
+	echo -e "\n\t${purpleColour}y)${endColour}${greyColour} Muestra el enlace al vídeo resolviendo la máquina mencionada${endColour}"
 	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Muestra el panel de ayuda${endColour}"
 }
 
@@ -101,17 +102,33 @@ function searchMachine(){
 		echo -e "\n${yellowColour}[+]${endColour}${greyColour}Lista no encontrada${endColour}"
 		updateList
 	fi
-	cat machine_list.txt | awk "/name: \"${machineName}\"/,/resuelta:/"  | grep -vE "id:|sku:|resuelta" | tr -d '"' | tr -d ',' | sed 's/^ *//'
-
+	machineData="$(cat machine_list.txt | awk "/name: \"${machineName}\"/,/resuelta:/"  | grep -vE "id:|sku:|resuelta" | tr -d '"' | tr -d ',' | sed 's/^ *//')"
+	if [ "$machineData" ]
+	then
+		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}Los datos de la maquina${endColour} ${purpleColour}${machineName}${endColour} ${rgeyColour}son:${endColour} \n\n${machineData}"
+	else
+		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ninguna máquina con el nombre${endColour} ${yellowColour}${machineName}${endColour}"
+	fi
 }
 
 function getNameByIP(){
 	IP_Address="$1"
 	machineName="$(cat machine_list.txt | grep "ip: \"$IP_Address\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')"
-	echo -e "\n${yellowColour}[+]${endColour} ${greyColour}La IP${endColour} ${blueColour}${IP_Address}${endColour} ${greyColour}pertenece a la máquina${endColour} ${purpleColour}$machineName${endColour}"
+	if [ "$machineName" ]
+	then
+		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}La IP${endColour} ${blueColour}${IP_Address}${endColour} ${greyColour}pertenece a la máquina${endColour} ${purpleColour}$machineName${endColour}"
+	else	
+		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ninguna máquina con el la IP${endColour} ${yellowColour}${IP_Address}${endColour}"
+	fi
 }
 
-while getopts "m:huri:" arg; do
+function getVideoLink(){
+	machineName="$1"
+	youtubeLink="$(cat machine_list.txt | awk "/name: \"${machineName}\"/, /resuelta:/" | grep -vE 'id:|sku:|resuelta' | tr -d '",' | grep youtube | awk 'NF { print $NF }')"
+	echo $youtubeLink
+}
+
+while getopts "m:huri:y:" arg; do
 	case $arg in
 	   m)
 		machineName=$OPTARG; let parameter_counter+=1
@@ -125,8 +142,10 @@ while getopts "m:huri:" arg; do
 	   i)
 		IP_Address=$OPTARG; let parameter_counter+=5
 		;;
+	   y)
+		machineName=$OPTARG; let parameter_counter+=7
+		;;
 	   h)
-		helpPanel
 		;;
 
 	esac
@@ -144,6 +163,9 @@ then
 elif [ $parameter_counter -eq 5 ]
 then
 	getNameByIP $IP_Address
+elif [ $parameter_counter -eq 7 ]
+then
+	getVideoLink $machineName
 else
 	helpPanel
 fi
