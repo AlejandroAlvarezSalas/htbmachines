@@ -30,6 +30,7 @@ function helpPanel(){
 	echo -e "\n\t${purpleColour}u)${endColour}${greyColour} Actualiza el listado${endColour}"
 	echo -e "\n\t${purpleColour}i)${endColour}${greyColour} Busca el nombre de una máquina por IP${endColour}"
 	echo -e "\n\t${purpleColour}y)${endColour}${greyColour} Muestra el enlace al vídeo resolviendo la máquina mencionada${endColour}"
+	echo -e "\n\t${purpleColour}d)${endColour}${greyColour} Muesta la lista de máquinas asociadas a una dificultad (Fácil, Media, Difícil o Insane)${endColour}"
 	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Muestra el panel de ayuda${endColour}"
 }
 
@@ -122,13 +123,31 @@ function getNameByIP(){
 	fi
 }
 
+function getNameByDifficulty(){
+	difficulty="$1"
+	machines="$(cat machine_list.txt | grep -B 5 "dificultad: \"$difficulty\"" | grep name | awk 'NF {print $NF}' | tr -d '"' | tr -d ',' | column)" 
+	if [ "$machines" ]
+	then
+		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}Lista de máquinas con dificultad${endColour} ${purpleColour}$difficulty${endColour}"
+		echo -e "\n${blueColour}${machines}${endColour}"
+	else	
+		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ninguna máquina con el la dificultad${endColour} ${yellowColour}${difficulty}${endColour}"
+	fi
+}
+
 function getVideoLink(){
 	machineName="$1"
 	youtubeLink="$(cat machine_list.txt | awk "/name: \"${machineName}\"/, /resuelta:/" | grep -vE 'id:|sku:|resuelta' | tr -d '",' | grep youtube | awk 'NF { print $NF }')"
 	echo $youtubeLink
+	if [ "$youtubeLink" ]
+	then
+		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}Enlace al vídeo${endColour} ${blueColour}${youtubeLink}${endColour} ${greyColour}de la máquina${endColour} ${purpleColour}$machineName${endColour}"
+	else	
+		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ningún vídeo de la máquina con el nombre${endColour} ${yellowColour}${machineName}${endColour}"
+	fi
 }
 
-while getopts "m:huri:y:" arg; do
+while getopts "m:huri:y:d:" arg; do
 	case $arg in
 	   m)
 		machineName=$OPTARG; let parameter_counter+=1
@@ -144,6 +163,9 @@ while getopts "m:huri:y:" arg; do
 		;;
 	   y)
 		machineName=$OPTARG; let parameter_counter+=7
+		;;
+	   d)
+		difficulty=$OPTARG; let parameter_counter+=11
 		;;
 	   h)
 		;;
@@ -166,6 +188,9 @@ then
 elif [ $parameter_counter -eq 7 ]
 then
 	getVideoLink $machineName
+elif [ $parameter_counter -eq 11 ]
+then
+	getNameByDifficulty $difficulty
 else
 	helpPanel
 fi
