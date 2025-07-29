@@ -14,6 +14,7 @@ grayColour="\e[0;37m\033[1m"
 main_url="https://htbmachines.github.io/bundle.js"
 parameter_counter=0
 missing_dependencies=()
+commandString=""
 
 function ctrl_c(){
 	echo -e "\n${redColour}[!]${endColour} Exitting..."
@@ -32,7 +33,7 @@ function helpPanel(){
 	echo -e "\n\t${purpleColour}y)${endColour}${greyColour} Muestra el enlace al vídeo resolviendo la máquina mencionada${endColour}"
 	echo -e "\n\t${purpleColour}d)${endColour}${greyColour} Muesta la lista de máquinas asociadas a una dificultad (Fácil, Media, Difícil o Insane)${endColour}"
 	echo -e "\n\t${purpleColour}o)${endColour}${greyColour} Muesta la lista de máquinas asociadas a un sistema operativo (Windows, Linux)${endColour}"
-	echo -e "\n\t${purpleColour}s)${endColour}${greyColour} Muesta la lista de máquinas asociadas a una habilidades necesarias sin comas (Abusing krb5.keytab file, Active Directory, etc)${endColour}"
+	echo -e "\n\t${purpleColour}s)${endColour}${greyColour} Muesta la lista de máquinas asociadas a una habilidades necesarias sin comas (Abusing krb5.keytab file Active Directory etc)${endColour}"
 	echo -e "\n\t${purpleColour}h)${endColour}${greyColour} Muestra el panel de ayuda${endColour}"
 }
 
@@ -45,11 +46,9 @@ function dependenciesChecker(){
         then
 		missing_dependencies+=('beautify')
         fi
-
 }
 
 function versionChecker(){
-
 	if [ -f machine_list.tmp ]
 	then
 		
@@ -67,7 +66,23 @@ function versionChecker(){
 	fi
 
 	rm machine_list.tmp
+}
 
+function commandBuilder(){
+	keywords=("$@")
+	cmd="cat machine_list.txt"
+
+    for keyword in "${keywords[@]}"; do
+        cmd+=" | grep -i -B 6 -E \"skills: .*${keyword}\""
+    done
+
+    cmd+=" | grep name"
+    cmd+=" | awk 'NF {print \$NF}'"
+    cmd+=" | tr -d '\"'"
+    cmd+=" | tr -d ','"
+    cmd+=" | column"
+
+    commandString=$cmd;
 }
 	
 function recoverBackup(){
@@ -94,9 +109,7 @@ function updateList(){
 	fi
 
 	versionChecker
-	
 }
-
 
 function searchMachine(){
 	machineName="$1"
@@ -150,17 +163,18 @@ function getNameByOperatingSystem(){
 
 } 
 
-function getNameBySkill(){
-	skill="$1"
-	machines="$(cat machine_list.txt | grep -B 6 "skills: \"$skills\"" | grep name | awk 'NF {print $NF}' | tr -d '"' | tr -d ',' | column)" 
+function getNameBySkills(){
+	skills="$@"
+	commandBuilder $skills
+	machines="$(eval $commandString)" 
+
 	if [ "$machines" ]
 	then
-		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}Lista de máquinas con skill${endColour} ${purpleColour}$skill${endColour}"
+		echo -e "\n${yellowColour}[+]${endColour} ${greyColour}Lista de máquinas con skill${endColour} ${purpleColour}$skills${endColour}"
 		echo -e "\n${blueColour}${machines}${endColour}"
 	else	
-		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ninguna máquina con la skill${endColour} ${yellowColour}${skill}${endColour}"
+		echo -e "${redColour}[!]${endColour} ${greyColour}No se ha encontrado ninguna máquina con la skill${endColour} ${yellowColour}${skills}${endColour}"
 	fi
-
 } 
 
 function getVideoLink(){
@@ -199,14 +213,14 @@ while getopts "m:huri:y:d:o:s:" arg; do
 		system=$OPTARG; let parameter_counter+=13
 		;;
 	   s)
-		skill=$OPTARG; let parameter_counter+=17
+		skills=$OPTARG; let parameter_counter+=17
 		;;
 	   h)
 		;;
 
 	esac
 done
-
+:º
 #Table of values to control data management
 if [ $parameter_counter -eq 1 ]
 then
@@ -231,7 +245,7 @@ then
 	getNameByOperatingSystem $system
 elif [ $parameter_counter -eq 17 ]
 then
-	getNameBySkill $skill
+	getNameBySkills $skills
 else
 	helpPanel
 fi
